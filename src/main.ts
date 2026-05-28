@@ -33,7 +33,11 @@ WA.onInit()
         fichar("enter");
         WA.ui.openPopup("clockPopup", "🟢 Fichaje iniciado (" + (WA.player.name || "?") + ")", []);
 
-        // Salir / cerrar pestaña -> fichar salida (keepalive asegura el envío).
+        // Latido cada 60s: el cron de FS cierra el fichaje si dejan de llegar
+        // latidos (cierre fiable aunque el navegador muera sin enviar 'leave').
+        setInterval(() => fichar("heartbeat"), 60000);
+
+        // Salir / cerrar pestaña -> fichar salida (best-effort; el cron respalda).
         const leave = () => fichar("leave");
         window.addEventListener("pagehide", leave);
         window.addEventListener("beforeunload", leave);
