@@ -9,7 +9,7 @@ const CLK_RELAY = "https://mundo.services.devbeply.es/clk";
 const CLK_TOKEN = "clk-zone-2026-7K9wQ2";
 const ZONA = "oficina";
 
-function fichar(action: "enter" | "leave"): void {
+function fichar(action: "enter" | "leave" | "heartbeat"): void {
     const body = new URLSearchParams({
         token: CLK_TOKEN,
         email: WA.player.name || "",
