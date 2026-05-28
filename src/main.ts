@@ -8,37 +8,68 @@ console.info("BeplyClockify map script started");
 const CLK_RELAY = "https://mundo.services.devbeply.es/clk";
 const CLK_TOKEN = "clk-zone-2026-7K9wQ2";
 const ZONA = "oficina";
+const BTN_ID = "clk-counter";
 
-function fichar(action: "enter" | "leave" | "heartbeat"): void {
+// Total de hoy (segundos) reportado por el servidor y momento de la última sync.
+let baseSeg = 0;
+let baseEpoch = Date.now();
+
+function fmt(totalSeg: number): string {
+    const h = Math.floor(totalSeg / 3600);
+    const m = Math.floor((totalSeg % 3600) / 60);
+    return "🕒 " + h + "h " + (m < 10 ? "0" : "") + m + "m";
+}
+
+function pintarContador(): void {
+    const seg = baseSeg + Math.floor((Date.now() - baseEpoch) / 1000);
+    WA.ui.actionBar.addButton({
+        id: BTN_ID,
+        label: fmt(seg),
+        bgColor: "#1f6feb",
+        textColor: "#ffffff",
+        toolTip: "Horas fichadas hoy",
+    } as any);
+}
+
+async function fichar(action: "enter" | "leave" | "heartbeat"): Promise<void> {
     const body = new URLSearchParams({
         token: CLK_TOKEN,
         email: WA.player.name || "",
         zona: ZONA,
         action,
     });
-    fetch(CLK_RELAY, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString(),
-        keepalive: true,
-        mode: "cors",
-    }).catch((e) => console.error("clockify fichar error", e));
+    try {
+        const res = await fetch(CLK_RELAY, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: body.toString(),
+            keepalive: true,
+            mode: "cors",
+        });
+        const data = await res.json();
+        if (typeof data.hoyseg === "number") {
+            baseSeg = data.hoyseg;
+            baseEpoch = Date.now();
+            pintarContador();
+        }
+    } catch (e) {
+        console.error("clockify fichar error", e);
+    }
 }
 
 WA.onInit()
     .then(() => {
         console.info("BeplyClockify ready, player =", WA.player.name);
 
-        // Entrar al mundo = entrar en la oficina -> fichar entrada.
+        // Entrar al mundo = entrar en la oficina -> fichar entrada + mostrar contador.
         fichar("enter");
-        WA.ui.openPopup("clockPopup", "🟢 Fichaje iniciado (" + (WA.player.name || "?") + ")", []);
 
-        // Latido cada 60s: el cron de FS cierra el fichaje si dejan de llegar
-        // latidos (cierre fiable aunque el navegador muera sin enviar 'leave').
+        // Refresca el contador en pantalla cada 30s (suave) y manda latido cada 60s.
+        setInterval(pintarContador, 30000);
         setInterval(() => fichar("heartbeat"), 60000);
 
-        // Salir / cerrar pestaña -> fichar salida (best-effort; el cron respalda).
-        const leave = () => fichar("leave");
+        // Salir / cerrar pestaña -> fichar salida (best-effort; el cron de FS respalda).
+        const leave = () => { fichar("leave"); };
         window.addEventListener("pagehide", leave);
         window.addEventListener("beforeunload", leave);
 
