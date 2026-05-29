@@ -4,8 +4,10 @@ import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
 console.info("BeplyClockify map script started");
 
-// Relay HTTPS (mismo edge del juego) que reenvía el fichaje al FacturaScripts.
-const CLK_RELAY = "https://mundo.services.devbeply.es/clk";
+// Relay HTTPS (mismo origen del juego) que reenvía el fichaje al FacturaScripts.
+// Dinámico: funciona en dev (mundo.services.devbeply.es) y prod (mundo.adminbeply.es)
+// sin recompilar, porque el script se sirve desde el map-storage del propio dominio.
+const CLK_RELAY = window.location.origin + "/clk";
 const CLK_TOKEN = "clk-zone-2026-7K9wQ2";
 const ZONA = "oficina";
 const BTN_ID = "clk-counter";
