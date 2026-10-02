@@ -18,7 +18,11 @@ concurrency:
 
 jobs:
   validate:
-    runs-on: arc-runner-set
+    # Temporary exception for this PUBLIC repository: standard GitHub-hosted
+    # runners are free. Keep public PR code outside the shared cluster until
+    # ARC repository eligibility and isolation are explicitly verified.
+    # Restore ARC after that proof; do not widen the organization runner group.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
